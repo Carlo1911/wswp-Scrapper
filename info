@@ -1,0 +1,5 @@
+pip install --index-url=http://pypi.python.org/simple/ --trusted-host pypi.python.org beautifulsoup4
+pip install --index-url=http://pypi.python.org/simple/ --trusted-host pypi.python.org lxml
+pip install --index-url=http://pypi.python.org/simple/ --trusted-host pypi.python.org python-whois
+
+builtwith desde: https://bitbucket.org/jinksPadlock/builtwith/src/67bfdb9c6543d0a867706d22403347374e8f23b5?at=default
