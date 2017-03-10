@@ -1,3 +1,6 @@
+Consola Windows for encoding problems: chcp 65001
+http://www.useragentstring.com/pages/useragentstring.php
+
 pip install --index-url=http://pypi.python.org/simple/ --trusted-host pypi.python.org beautifulsoup4
 pip install --index-url=http://pypi.python.org/simple/ --trusted-host pypi.python.org lxml
 pip install --index-url=http://pypi.python.org/simple/ --trusted-host pypi.python.org python-whois
