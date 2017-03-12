@@ -5,9 +5,8 @@ import urllib.parse
 import urllib.robotparser
 import re
 import itertools
-from Throttle import Throttle
-from multiprocessing import Queue
 import html
+
 
 #Permite saber que es lo que utiliza la página
 #print(builtwith.parse('http://migracion.iniciativa2025alc.org'))
@@ -59,76 +58,37 @@ def iterar_example():
                 break
         else:
             # éxito - puedes hacer scraping al resultado
-            num_errors = 0
+            pass
 
 #iterar_example()
 #crawl_sitemap('http://example.webscraping.com/sitemap.xml','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36')
 
-def get_robots(url):
-    #Initialize robots parser for this domain
+def link_crawler(seed_url,link_regex,user_agent,proxyD=None):       
     rp = urllib.robotparser.RobotFileParser()
-    rp.set_url(urllib.parse.urljoin(url, '/robots.txt'))
+    rp.set_url(seed_url +'/robots.txt')
     rp.read()
-    return rp
-
-def link_crawler(seed_url,link_regex,user_agent,proxyD=None, headers=None, num_retries=1, delay=2,max_depth=-1, max_urls=-1):    
-    rp = get_robots(seed_url)
     #Crawl from seed_url following links que cumplan el link_regex
-    crawl_queue = Queue(0)
-    crawl_queue.put(seed_url)
-    #crawl_queue = Queue.get_nowait([seed_url])
-    # the URL's that have been seen and at what depth
-    seen = {seed_url: 0}
-    num_urls = 0
-
-    throttle = Throttle(delay)
-    headers = headers or {}
-    if user_agent:
-        headers['User-agent'] = user_agent
-
+    crawl_queue = [seed_url]
+    # ver cuales ya han sido visitados
+    seen = set(crawl_queue)
     while crawl_queue:
-        url = crawl_queue.get()
+        url = crawl_queue.pop()
         if rp.can_fetch(user_agent,url):
-            throttle.wait(url)
-            pagina = download(url,user_agent,proxyD, num_retries)
-            links = []
-            depth = seen[url]
-            if depth != max_depth:
-                
-                links = get_links(pagina)
-                #filtro para links que encajan con el link_regex
-                for link in links:
-                    #link = urllib.parse.urljoin(seed_url, link)
-                    link = normalize(seed_url, link)  
-                    if link not in seen and re.match(link_regex, link):
-                        seen[link] = depth + 1
-                        if same_domain(seed_url, link):
-                            # success! add this new link to queue
-                            crawl_queue.put(link)
-            # check whether have reached downloaded maximum
-            num_urls += 1
-            if num_urls == max_urls:
-                break
+            pagina = download(url,user_agent,proxyD)
+            #filtro para links que encajan con el link_regex
+            for link in get_links(pagina):
+                link = urllib.parse.urljoin(seed_url, link)            
+                if re.match(link_regex,link) and link not in seen:
+                    seen.add(link)                                               
+                    crawl_queue.append(link)
         else:
             print ('Blocked by robots.txt:',url)
-
-def same_domain(url1, url2):
-    """Return True if both URL's belong to same domain
-    """
-    return urllib.parse.urlparse(url1).netloc == urllib.parse.urlparse(url2).netloc
-
-def normalize(seed_url, link):
-    """Normalize this URL by removing hash and adding domain
-    """
-    #link = urllib.parse.urldefrag(link[0]) # remove hash to avoid duplicates
-    return urllib.parse.urljoin(seed_url, link[0])
 
 def get_links(pagina):
     #Retorna lista de links
     webpage_regex = re.compile('<a[^>]+href=["\'](.*?)["\'](.*?)',re.IGNORECASE)
     #print(webpage_regex.findall(str(html)))
-    pagina = html.unescape(str(pagina))
-    return webpage_regex.findall(str(pagina))
+    return webpage_regex.findall(str(html.unescape(pagina)))
 
 #link_crawler('http://example.webscraping.com','http://example.webscraping.com/(index|view)/','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36')
-link_crawler('http://elcomercio.pe','http://elcomercio.pe/*/','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36','89.163.246.150:8080',delay=1)
+link_crawler('http://elcomercio.pe','http://elcomercio.pe/*/','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36','89.163.246.150:8080')
