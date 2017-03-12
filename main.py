@@ -9,10 +9,6 @@ from Throttle import Throttle
 from multiprocessing import Queue
 import html
 
-#Permite saber que es lo que utiliza la página
-#print(builtwith.parse('http://migracion.iniciativa2025alc.org'))
-#print(whois.whois('http://migracion.iniciativa2025alc.org'))
-
 def download(url, user_agent='wswp', proxyD=None, num_retries=2):
     print('Descargando url',url)
     headers = {'User-agent':user_agent}
@@ -29,10 +25,8 @@ def download(url, user_agent='wswp', proxyD=None, num_retries=2):
         if num_retries > 0:
             if hasattr(e,'code') and 500 <= e.code < 600:
                 #Recursivamente intentar errores 5xx HTTP
-                return donwload(url,user_agent,proxyD,num_retries-1)
+                return download(url,user_agent,proxyD,num_retries-1)
     return pagina
-
-#print(download('http://www.meetup.com/')
 
 def crawl_sitemap(url,user_agent):
     #Descargar el archivo sitemap
@@ -43,8 +37,6 @@ def crawl_sitemap(url,user_agent):
     #bajar cada links
     for link in links:
         pagina = download(link)
-        #linkH = re.findall('<loc>(.*?)</loc>',str(pagina))
-        #crawl_sitemap(linkH[0])
 
 def iterar_example():
     #Cantidad de errores a cometer
@@ -61,9 +53,6 @@ def iterar_example():
             # éxito - puedes hacer scraping al resultado
             num_errors = 0
 
-#iterar_example()
-#crawl_sitemap('http://example.webscraping.com/sitemap.xml','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36')
-
 def get_robots(url):
     #Initialize robots parser for this domain
     rp = urllib.robotparser.RobotFileParser()
@@ -76,7 +65,6 @@ def link_crawler(seed_url,link_regex,user_agent,proxyD=None, headers=None, num_r
     #Crawl from seed_url following links que cumplan el link_regex
     crawl_queue = Queue(0)
     crawl_queue.put(seed_url)
-    #crawl_queue = Queue.get_nowait([seed_url])
     # the URL's that have been seen and at what depth
     seen = {seed_url: 0}
     num_urls = 0
@@ -93,12 +81,10 @@ def link_crawler(seed_url,link_regex,user_agent,proxyD=None, headers=None, num_r
             pagina = download(url,user_agent,proxyD, num_retries)
             links = []
             depth = seen[url]
-            if depth != max_depth:
-                
+            if depth != max_depth:                
                 links = get_links(pagina)
                 #filtro para links que encajan con el link_regex
                 for link in links:
-                    #link = urllib.parse.urljoin(seed_url, link)
                     link = normalize(seed_url, link)  
                     if link not in seen and re.match(link_regex, link):
                         seen[link] = depth + 1
@@ -120,15 +106,18 @@ def same_domain(url1, url2):
 def normalize(seed_url, link):
     """Normalize this URL by removing hash and adding domain
     """
-    #link = urllib.parse.urldefrag(link[0]) # remove hash to avoid duplicates
+    link = urllib.parse.urldefrag(link[0]) # return DefragResult(url='http://publimetro.pe/?ref=ecf', fragment='')
     return urllib.parse.urljoin(seed_url, link[0])
 
 def get_links(pagina):
     #Retorna lista de links
     webpage_regex = re.compile('<a[^>]+href=["\'](.*?)["\'](.*?)',re.IGNORECASE)
-    #print(webpage_regex.findall(str(html)))
     pagina = html.unescape(str(pagina))
     return webpage_regex.findall(str(pagina))
 
-#link_crawler('http://example.webscraping.com','http://example.webscraping.com/(index|view)/','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36')
-link_crawler('http://elcomercio.pe','http://elcomercio.pe/*/','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36','89.163.246.150:8080',delay=1)
+
+#Permite saber que es lo que utiliza la página
+#print(builtwith.parse('https://codigofacilito.com/'))
+#print(whois.whois('http://migracion.iniciativa2025alc.org'))
+
+link_crawler('https://codigofacilito.com','https://codigofacilito.com/*/','archive.org_bot','89.163.246.150:8080',delay=1)
